@@ -41,7 +41,7 @@ fn main() {
     for i in 0..args.size {
         let sec_1 = (i + 1)..(i + 1 + args.locality).min(args.size);
         let sec_2 = (i + args.locality + 1).max(args.size - args.locality + i)..(args.size);
-        for j in dbg!(sec_1).chain(dbg!(sec_2)) {
+        for j in sec_1.chain(sec_2) {
             let connect = roll();
             if connect {
                 graph[i].push(j);
