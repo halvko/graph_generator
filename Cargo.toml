@@ -1,17 +1,12 @@
 [package]
 name = "graph_generator"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Erik Funder Carstensen <funder@fastmail.com>"]
+license = "MIT"
 description = """
 A small tool for generating random graphs
 """
-
-[package.metadata.wix]
-upgrade-guid = "C078C492-0726-4C20-A1FB-EF34AE71D140"
-path-guid = "0C6A193A-56E8-4DDA-B348-0870D0C71BB2"
-license = false
-eula = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -28,7 +23,5 @@ lto = "thin"
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
 cargo-dist-version = "0.6.3"
-# The installers to generate for each app
-installers = ["msi"]
 # Target platforms to build apps for (Rust target-triple syntax)
-targets = ["x86_64-unknown-linux-gnu", "aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-pc-windows-msvc"]
+targets = ["x86_64-unknown-linux-gnu"]

@@ -13,10 +13,13 @@ struct Args {
     #[arg(short, long)]
     connectedness: f64,
 
-    /// The difference in node id with which a given node can still connect. This wraps, such that node 1 can always connect to node _size_.
-    /// A value of zero or greater than size is interpreted as no restriction.
+    /// The difference in node id with which a given node can still connect.
     #[arg(short, long)]
     locality: usize,
+
+    /// If set, the locality wraps around such that node 1 can reach node <size>
+    #[arg(short, long)]
+    wraparound: bool,
 
     /// Sets the graph to be directed
     #[arg(short, long)]
@@ -39,8 +42,12 @@ fn main() {
     let mut roll = move || rng.next().unwrap() <= args.connectedness;
 
     for i in 0..args.size {
-        let sec_1 = (i + 1)..(i + 1 + args.locality).min(args.size);
-        let sec_2 = (i + args.locality + 1).max(args.size - args.locality + i)..(args.size);
+        let sec_1 = (i + 1)..(i + args.locality + 1).min(args.size);
+        let sec_2 = if args.wraparound {
+            (i + args.locality + 1).max(args.size - args.locality + i)..(args.size)
+        } else {
+            0..0 // NOTE: Ranges are empty if start >= end
+        };
         for j in sec_1.chain(sec_2) {
             let connect = roll();
             if connect {
