@@ -41,25 +41,43 @@ fn main() {
         args.wraparound,
     );
 
-    let edges = graph
+    let mut lengths = graph
         .iter()
         .enumerate()
         .map(|(i, v)| (i + 1, v))
-        .flat_map(|(i, v)| {
-            v.iter()
-                .filter(move |e| if !args.directed { **e > i } else { true })
+        .flat_map(|(v, es)| {
+            es.iter()
+                .copied()
+                .filter(move |&e| if !args.directed { e > v } else { true })
+                .map(move |e| v.max(e) - v.min(e))
         })
-        .count();
-    eprintln!("Edge count: {edges}");
+        .collect::<Vec<usize>>();
 
-    let actual_locality = graph
+    eprintln!("Node count: {}", args.size);
+
+    let edges_count = lengths.len();
+    eprintln!("Edge count: {edges_count}");
+
+    let actual_locality = lengths.iter().copied().max().unwrap_or(0);
+    eprintln!("Max length: {actual_locality}");
+
+    let average_locality = lengths.iter().sum::<usize>() / lengths.len();
+    let median_locality = {
+        lengths.sort_unstable();
+        lengths[lengths.len() / 2]
+    };
+    eprintln!("Average length: {average_locality}");
+    eprintln!("Median length: {median_locality}");
+
+    let std_deviation = (lengths
         .iter()
-        .enumerate()
-        .map(|(i, v)| (i + 1, v))
-        .flat_map(|(v, es)| es.iter().map(move |e| v.max(*e) - v.min(*e)))
-        .max()
-        .unwrap_or(0);
-    eprintln!("Actual locality: {actual_locality}");
+        .copied()
+        .map(|l| (l - average_locality) * (l - average_locality))
+        .sum::<usize>() as f64
+        / lengths.len() as f64)
+        .sqrt();
+
+    eprintln!("STD Deviation of length: {std_deviation}");
 
     for (i, n) in graph.into_iter().enumerate().map(|(i, n)| (i + 1, n)) {
         print!("{} 1", i);
