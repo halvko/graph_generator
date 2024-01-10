@@ -27,41 +27,39 @@ struct Args {
 }
 
 fn main() {
-    use rand::prelude::*;
     let mut args = Args::parse();
     if args.locality == 0 {
         args.locality = args.size;
     }
     let args = args;
 
-    let mut graph: Vec<Vec<usize>> = vec![vec![]; args.size];
+    let graph = generate_graph(
+        args.size,
+        args.connectedness,
+        args.locality,
+        args.directed,
+        args.wraparound,
+    );
 
-    let mut rng = thread_rng();
-    let mut rng = rand::distributions::Uniform::new_inclusive(0.0, 1.0).sample_iter(&mut rng);
+    let edges = graph
+        .iter()
+        .enumerate()
+        .map(|(i, v)| (i + 1, v))
+        .flat_map(|(i, v)| {
+            v.iter()
+                .filter(move |e| if !args.directed { **e > i } else { true })
+        })
+        .count();
+    eprintln!("Edge count: {edges}");
 
-    let mut roll = move || rng.next().unwrap() <= args.connectedness;
-
-    for i in 0..args.size {
-        let sec_1 = (i + 1)..(i + args.locality + 1).min(args.size);
-        let sec_2 = if args.wraparound {
-            (i + args.locality + 1).max(args.size - args.locality + i)..(args.size)
-        } else {
-            0..0 // NOTE: Ranges are empty if start >= end
-        };
-        for j in sec_1.chain(sec_2) {
-            let connect = roll();
-            if connect {
-                graph[i].push(j);
-            }
-            if args.directed {
-                if roll() {
-                    graph[j].push(i);
-                }
-            } else if connect {
-                graph[j].push(i);
-            }
-        }
-    }
+    let actual_locality = graph
+        .iter()
+        .enumerate()
+        .map(|(i, v)| (i + 1, v))
+        .flat_map(|(v, es)| es.iter().map(move |e| v.max(*e) - v.min(*e)))
+        .max()
+        .unwrap_or(0);
+    eprintln!("Actual locality: {actual_locality}");
 
     for (i, n) in graph.into_iter().enumerate().map(|(i, n)| (i + 1, n)) {
         print!("{} 1", i);
@@ -70,4 +68,45 @@ fn main() {
         }
         println!(" 0");
     }
+}
+
+fn generate_graph(
+    size: usize,
+    connectedness: f64,
+    locality: usize,
+    directed: bool,
+    locality_wrapping: bool,
+) -> Vec<Vec<usize>> {
+    use rand::prelude::*;
+    let mut graph: Vec<Vec<usize>> = vec![vec![]; size];
+
+    let mut rng = thread_rng();
+    let mut rng = rand::distributions::Uniform::new_inclusive(0.0, 1.0).sample_iter(&mut rng);
+
+    let mut roll = move || rng.next().unwrap() <= connectedness;
+
+    for i in 0..size {
+        let sec_1 = (i + 1)..(i + locality + 1).min(size);
+        let sec_2 = if locality_wrapping {
+            (i + locality + 1).max(size - locality + i)..(size)
+        } else {
+            0..0 // NOTE: Ranges are empty if start >= end
+        };
+        for j in sec_1.chain(sec_2) {
+            let connect = roll();
+            if connect {
+                graph[i].push(j);
+            }
+            if !directed {
+                if connect {
+                    graph[j].push(i);
+                }
+            } else {
+                if roll() {
+                    graph[j].push(i);
+                }
+            }
+        }
+    }
+    graph
 }
