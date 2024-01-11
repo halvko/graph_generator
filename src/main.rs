@@ -44,12 +44,11 @@ fn main() {
     let mut lengths = graph
         .iter()
         .enumerate()
-        .map(|(i, v)| (i + 1, v))
         .flat_map(|(v, es)| {
             es.iter()
                 .copied()
-                .filter(move |&e| if !args.directed { e > v } else { true })
-                .map(move |e| v.max(e) - v.min(e))
+                .filter(move |&e| args.directed || e > v)
+                .map(move |e| v.abs_diff(e))
         })
         .collect::<Vec<usize>>();
 
@@ -72,7 +71,8 @@ fn main() {
     let std_deviation = (lengths
         .iter()
         .copied()
-        .map(|l| (l - average_locality) * (l - average_locality))
+        .map(|l| l.abs_diff(average_locality))
+        .map(|deviation| deviation * deviation)
         .sum::<usize>() as f64
         / lengths.len() as f64)
         .sqrt();
